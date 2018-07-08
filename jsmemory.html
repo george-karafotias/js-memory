@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#wrap {
+	width:1000px;
+	margin:0 auto;
+}
+#left_col {
+   float:left;
+   width:800px;
+}
+#right_col {
+	float:right;
+	width:200px;
+	text-align:center;
+}
+button.icon {
+	width:200px; 
+	height:160px; 
+	border:0;
+	background-size:100%;
+}
+button.closed {
+	background:url("presstoopen.png");
+}
+p#timer {
+	font-size:36px;
+	font-weight:bold;
+}
+#bestScoreLbl {
+	font-size:32px;
+	font-weight:bold;
+	margin:50px 0px 0px 0px;
+}
+#bestScore {
+	font-size:32px;
+	font-weight:bold;
+}
+.startBtn:hover, .stopBtn:hover
+{
+	opacity:0.8;
+	transition: opacity .2s ease-out;
+	-moz-transition: opacity .2s ease-out;
+	-webkit-transition: opacity .2s ease-out;
+	-o-transition: opacity .2s ease-out;
+}
+</style>
+<script>
+var imagesArray = [];
+var scores = [];
+var buttons = document.getElementsByClassName("icon");
+var closedIcon = "presstoopen.png";
+var paused = false;
+var pauseMillis = 1000;
+var timerInterval = null;
+var timerVal = 0;
+var timerStep = 200;
+
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length; i; i--) {
+        j = Math.floor(Math.random() * i);
+        x = a[i - 1];
+        a[i - 1] = a[j];
+        a[j] = x;
+    }
+}
+
+function startGame() {
+	if (paused) return;
+	
+	var imagesUrl = ["player1.jpg", "player2.jpg", "player3.jpg", "player4.jpg", "player5.jpg", "player6.jpg", "player7.jpg", "player8.jpg", "player1.jpg", "player2.jpg", "player3.jpg", "player4.jpg", "player5.jpg", "player6.jpg", "player7.jpg", "player8.jpg"];
+	shuffle(imagesUrl);
+	
+	imagesArray = [];
+	for (var i=0; i<16; i++) {
+		var img = {found:false, open:false, url:imagesUrl[i]};
+		imagesArray.push(img);
+		
+		buttons[i].style.backgroundImage = "url('" + closedIcon + "')";
+	}
+	
+	paused = false;
+	
+	startTimer();
+}
+
+function stopGame() {
+	if (paused) return;
+	
+	stopTimer();
+	imagesArray = [];
+	paused = false;
+}
+
+function flip(index) {
+	if (paused) return;
+
+	if (imagesArray[index].found) return;
+	
+	var openIconIndex = -1;
+	for (var i=0; i<imagesArray.length; i++) {
+		if (imagesArray[i].open) openIconIndex = i;
+	}
+	
+	if (index == openIconIndex) return;
+	
+	if (openIconIndex == -1) {
+		buttons[index].style.backgroundImage = "url('" + imagesArray[index].url + "')";
+		imagesArray[index].open = true;
+	} else {
+		var openIcon = buttons[openIconIndex].style.backgroundImage.replace('url(\"', '').replace('\")', '');
+		if (imagesArray[index].url == openIcon) {
+			buttons[index].style.backgroundImage = "url('" + imagesArray[index].url + "')";
+			imagesArray[index].found = true;
+			imagesArray[openIconIndex].found = true;
+			imagesArray[openIconIndex].open = false;
+			
+			var foundIcons = 0;
+			for (var i=0; i<imagesArray.length; i++) {
+				if (imagesArray[i].found) foundIcons++;
+			}
+	
+			if (foundIcons == imagesArray.length) {	// game over
+				paused = true;
+				stopTimer();
+				
+				setTimeout(function () {
+					imagesArray = [];
+					for (var i=0; i<buttons.length; i++) {
+						buttons[i].style.backgroundImage = "url('" + closedIcon + "')";
+					}
+					paused = false;
+					
+					scores.push(timerVal/1000);
+					findBestScore();
+				}, pauseMillis);
+			}
+		} else {
+			paused = true;
+			buttons[index].style.backgroundImage = "url('" + imagesArray[index].url + "')";
+		
+			setTimeout(function () {
+				imagesArray[openIconIndex].open = false;
+				buttons[index].style.backgroundImage = "url('" + closedIcon + "')";
+				buttons[openIconIndex].style.backgroundImage = "url('" + closedIcon + "')";
+				paused = false;
+			}, pauseMillis);
+		}
+	}
+}
+
+function findBestScore() {
+	scores.sort();
+	var bestScore = scores[0];
+	document.getElementById("bestScore").innerHTML = bestScore.toFixed(2);
+}
+
+function updateTimer() {
+	timerVal+=timerStep;
+	if (timerVal > 999.99 * 1000) {
+		stopTimer();
+		location.reload();
+	}
+	var secs = timerVal/1000;
+	var msecs = timerVal/100;	
+	document.getElementById("timer").innerHTML = secs.toFixed(2);
+}
+
+function startTimer() {
+	stopTimer();
+	timerVal = 0;
+	document.getElementById("timer").innerHTML = "0.00";
+	timerInterval = setInterval(updateTimer, timerStep);  
+}
+
+var stopTimer = function() {
+	clearInterval(timerInterval);
+}
+</script>
+</head>
+<body>
+<div id="wrap">
+    <div id="left_col">
+		<table cellpadding="0" cellspacing="0">
+			<tr>
+				<td><button onclick="flip(0)" class="icon closed" /></td>
+				<td><button onclick="flip(1)" class="icon closed" /></td>
+				<td><button onclick="flip(2)" class="icon closed" /></td>
+				<td><button onclick="flip(3)" class="icon closed" /></td>
+			</tr>
+			<tr>
+				<td><button onclick="flip(4)" class="icon closed" /></td>
+				<td><button onclick="flip(5)" class="icon closed" /></td>
+				<td><button onclick="flip(6)" class="icon closed" /></td>
+				<td><button onclick="flip(7)" class="icon closed" /></td>
+			</tr>
+			<tr>
+				<td><button onclick="flip(8)" class="icon closed" /></td>
+				<td><button onclick="flip(9)" class="icon closed" /></td>
+				<td><button onclick="flip(10)" class="icon closed" /></td>
+				<td><button onclick="flip(11)" class="icon closed" /></td>
+			</tr>
+			<tr>
+				<td><button onclick="flip(12)" class="icon closed" /></td>
+				<td><button onclick="flip(13)" class="icon closed" /></td>
+				<td><button onclick="flip(14)" class="icon closed" /></td>
+				<td><button onclick="flip(15)" class="icon closed" /></td>
+			</tr>
+		</table>
+    </div>
+    <div id="right_col">
+		<input type="button" class="startBtn" style="background-color:#4CAF50; border:none; cursor:pointer; margin:0 auto; color:white; padding:15px 32px; text-align:center; text-decoration:none; display:inline-block; font-size:16px;" value="START" onclick="startGame()">
+		<div><p id="timer">0.00</p></div>
+		<input type="button" class="stopBtn" style="background-color:red; border:none; cursor:pointer; margin:0 auto; color:white; padding:15px 32px; text-align:center; text-decoration:none; display:inline-block; font-size:16px;" value="STOP" onclick="stopGame()">
+		<div><p id="bestScoreLbl">Best Score<br/><span id="bestScore">-</span></p></div>
+	</div>
+</div>
+</body>
+</html>
